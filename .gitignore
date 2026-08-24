@@ -1,0 +1,28 @@
+cmake-build-*/
+/cmake-build-*/
+.idea/
+# Visual Studio files
+.vs/
+Tankmania/.vs/
+*.vcxproj.user
+*.suo
+*.user
+*.opendb
+
+# CMake build folders
+build/
+out/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+*.ninja
+*.obj
+*.exe
+*.ipch
+*.log
+*.vsidx
+
+# Ignore other generated folders
+*.db
+*.sqlite
+Tankmania/
