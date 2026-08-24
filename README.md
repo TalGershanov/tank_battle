@@ -2,7 +2,7 @@
 
 **Tank Battle** is a local two-player tank combat game written in C++ with raylib.
 
-The goal of this project is to build a small but complete real-time game from scratch: a fixed-timestep simulation, a layered `data / logic / handlers` architecture, collision resolution, and (eventually) a real search-based AI opponent.
+The goal of this project is to build a complete real-time game from scratch: a fixed-timestep simulation, a layered `data / logic / handlers` architecture, collision resolution, and (eventually) a real search-based AI opponent.
 
 > Tank Battle is currently under active development.
 
