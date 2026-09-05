@@ -2,7 +2,7 @@
 
 **Tank Battle** is a local two-player tank combat game written in C++ with raylib.
 
-The goal of this project is to build a complete real-time game from scratch: a fixed-timestep simulation, a layered `data / logic / handlers` architecture, collision resolution, and (eventually) a real search-based AI opponent.
+The goal of this project is to build a complete real-time game from scratch: a fixed-timestep simulation, a layered `data / logic / handlers` architecture, collision resolution, and a real search-based AI opponent.
 
 > Tank Battle is currently under active development.
 
@@ -23,16 +23,27 @@ The goal of this project is to build a complete real-time game from scratch: a f
 * Win/tie detection when all of a player's tanks are destroyed
 * Pause menu (resume, or quit to the main menu)
 * Main menu, opponent-selection screen, and an in-game controls/key-bindings screen
-* A basic rule-based computer opponent: fires when it has a clear, friendly-fire-free line of sight, evades incoming shells, and otherwise moves semi-randomly
+* A difficulty choice at the start of a Human vs Computer game: **Easy**, a rule-based opponent that fires on a clear, friendly-fire-free line of sight, evades incoming shells, and otherwise moves semi-randomly; or **Hard**, an alpha-beta pruned minimax search AI (see [SearchAgentPlayer](#searchagentplayer-hard-difficulty) below)
 * Fixed-timestep game loop (simulation ticks independently of the render/input frame rate)
 * 2D rendering via raylib, with a live HUD panel showing each player's remaining lives
 * Per-player configurable key bindings
 
 ### Planned
 
-* A difficulty choice at the start of a Human vs Computer game: **Easy**, using the existing rule-based computer player, and **Hard**, using a new alpha-beta pruned minimax search AI
 * Improved visuals
 * A choice of how many tanks each player plays with (currently fixed at two)
+
+---
+
+## SearchAgentPlayer (Hard difficulty)
+
+`SearchAgentPlayer` (`logic/search_agent_player.h` / `.cpp`) is a `Player` sibling to `ComputerPlayer`, selected by choosing "Hard" at the difficulty prompt. It plays under the same restriction as a human: only its current active tank moves or fires each tick, and it decides for itself when to switch.
+
+* **Active-tank switching** — every tick, `quickSelfEvaluate()` scores both of its own tanks against the nearest live enemy. It only switches to the inactive tank when that tank's score beats the active one's by more than `SEARCH_AGENT_SWITCH_MARGIN`, so it doesn't flip-flop over a marginal difference.
+* **Search** — to avoid simulating all four tanks at once, it clones a disposable 1-vs-1 slice of the board (`SimState`, built by `buildSimState`/`synthesizeWallsFromBoard`) for its active tank against the nearest alive enemy, then runs minimax with alpha-beta pruning (`search`, `stepState`) over `SEARCH_AGENT_SEARCH_ROUNDS` rounds of "my action → the enemy's worst-case reply", via `chooseBestAction`. A full replan only runs every `SEARCH_AGENT_REPLAN_TICKS` ticks (~1s) to stay cheap relative to the fixed `GAME_TICK_SECONDS` tick.
+* **Evaluation** — leaf positions are scored heuristically (`evaluate`): a clear line of fire (`hasLineOfFire`) is worth more to the AI when the *enemy* has it (`SEARCH_AGENT_LINE_OF_FIRE_DEFENSE_WEIGHT`) than when the AI does (`..._OFFENSE_WEIGHT`), an active shell's projected impact (`projectShellHits`) is weighted by how soon it lands, and adjacent walls/mines add or subtract via `SEARCH_AGENT_WALL_COVER_WEIGHT` / `SEARCH_AGENT_MINE_PROXIMITY_WEIGHT`. This biases the AI toward breaking stand-offs and dodging rather than trading shots evenly.
+* **Per-tick safety net** — independent of the replan cadence, every tick it checks whether an active shell is already projected to hit its tank; if so, `chooseSafeAction` immediately picks the best surviving move against that shell, overriding the cached plan. A free, unthreatened shot is likewise taken the instant it's available rather than waiting for the next replan.
+* **Friendly-fire prevention** — `wouldHitFriendly()` strips `FIRE` from the candidate actions at the root of `chooseBestAction` whenever it would hit the AI's own other tank, since that tank isn't modeled inside the 1-vs-1 `SimState` at all.
 
 ---
 
@@ -48,11 +59,11 @@ flowchart TD
     GameController["GameController<br/>CURRENT"]
 
     MenuScreens["MenuScreens<br/>CURRENT"]
-    DifficultyChoice["Difficulty Choice<br/>PLANNED"]
+    DifficultyChoice["Difficulty Choice<br/>CURRENT"]
 
     HumanPlayer["HumanPlayer<br/>CURRENT"]
     ComputerPlayerEasy["ComputerPlayer (rule-based)<br/>CURRENT / Easy"]
-    ComputerPlayerHard["ComputerPlayer (minimax)<br/>PLANNED / Hard"]
+    SearchAgentPlayerHard["SearchAgentPlayer (minimax)<br/>CURRENT / Hard"]
 
     Board["Board<br/>CURRENT"]
     Tank["Tank<br/>CURRENT"]
@@ -77,18 +88,19 @@ flowchart TD
     Main --> GameController
 
     GameController --> MenuScreens
-    MenuScreens -.-> DifficultyChoice
-    DifficultyChoice -.-> ComputerPlayerHard
+    MenuScreens --> DifficultyChoice
+    DifficultyChoice --> SearchAgentPlayerHard
 
     GameController --> HumanPlayer
     GameController --> ComputerPlayerEasy
+    GameController --> SearchAgentPlayerHard
 
     HumanPlayer --> InputProvider
     InputProvider --> RaylibInput
 
     HumanPlayer --> Tank
     ComputerPlayerEasy --> Tank
-    ComputerPlayerHard -.-> Tank
+    SearchAgentPlayerHard --> Tank
     Tank -.-> TankCount
 
     GameController --> Board
@@ -138,6 +150,7 @@ tank_battle/
 │   ├── player.h / .cpp
 │   ├── human_player.h / .cpp
 │   ├── computer_player.h / .cpp
+│   ├── search_agent_player.h / .cpp
 │   ├── input_provider.h
 │   ├── tank_spawn.h / .cpp
 │   ├── tank_movement.h / .cpp
@@ -180,7 +193,7 @@ while (accumulatedTime >= GAME_TICK_SECONDS) {
 renderFrame();
 ```
 
-The `logic/` layer has no dependency on raylib at all: `HumanPlayer` reads input through the `IInputProvider` interface, and only the `handlers/` layer's `RaylibInputProvider` knows about raylib's actual key-polling API. The same separation lets `ComputerPlayer` — and, in the future, a minimax-based `ComputerPlayer` variant — plug into `GameController` without either the game loop or the rendering code needing to change.
+The `logic/` layer has no dependency on raylib at all: `HumanPlayer` reads input through the `IInputProvider` interface, and only the `handlers/` layer's `RaylibInputProvider` knows about raylib's actual key-polling API. The same separation lets `ComputerPlayer` and `SearchAgentPlayer` plug into `GameController` as interchangeable `Player` implementations, without either the game loop or the rendering code needing to change.
 
 ---
 
@@ -227,6 +240,15 @@ Run the built executable (`tankBattle`, located in the build directory):
 (2) Human vs Computer
 ```
 
+### Difficulty selection
+
+Shown only after choosing Human vs Computer:
+
+```text
+(1) Easy
+(2) Hard
+```
+
 ### Controls
 
 | Action              | Player 1 | Player 2 |
@@ -266,8 +288,8 @@ While in a match, press `ESC` to pause (press again to resume, or `X` to quit to
 
 ### Phase 3 — Difficulty & AI
 
-* [ ] Difficulty selection screen (Easy / Hard)
-* [ ] Alpha-beta pruned minimax AI for Hard difficulty
+* [x] Difficulty selection screen (Easy / Hard)
+* [x] Alpha-beta pruned minimax AI for Hard difficulty
 
 ### Phase 4 — Polish
 
@@ -278,7 +300,7 @@ While in a match, press `ESC` to pause (press again to resume, or `X` to quit to
 
 ## Status
 
-Tank Battle is an actively developed project. The core gameplay loop — movement, shooting, walls, mines, collisions, menus, and a basic AI opponent — is complete and playable. The next major milestone is a proper search-based AI as a "Hard" difficulty option.
+Tank Battle is an actively developed project. The core gameplay loop — movement, shooting, walls, mines, collisions, menus, and both a rule-based and a search-based AI opponent — is complete and playable. The next milestone is Phase 4 polish: improved visuals and a configurable tank count.
 
 ---
 
