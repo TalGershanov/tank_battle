@@ -17,8 +17,8 @@ private:
 
 public:
     Tank(Point position, Direction initialDirection, bool hasCannon);
-    Tank(const Tank&) = delete;
-    Tank& operator=(const Tank&) = delete;
+    Tank(const Tank&) = default;
+    Tank& operator=(const Tank&) = default;
     Tank(Tank&&) = default;
     Tank& operator=(Tank&&) = default;
 

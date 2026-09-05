@@ -6,6 +6,7 @@
 
 #include "logic/human_player.h"
 #include "logic/computer_player.h"
+#include "logic/search_agent_player.h"
 #include "logic/shell_movement.h"
 #include "logic/wall_logic.h"
 #include "logic/collision_rules.h"
@@ -21,7 +22,13 @@ void GameController::run() {
         OpponentType opponentType = MenuScreens::promptOpponentType(context);
         if (context.shouldQuit()) return;
 
-        setupGame(opponentType == OpponentType::COMPUTER);
+        Difficulty difficulty = Difficulty::EASY;
+        if (opponentType == OpponentType::COMPUTER) {
+            difficulty = MenuScreens::promptDifficulty(context);
+            if (context.shouldQuit()) return;
+        }
+
+        setupGame(opponentType == OpponentType::COMPUTER, difficulty);
         runGameLoop();
         // runGameLoop() returns on window-close, on X-during-pause (which the
         // pause message itself promises returns to the main menu), or on a
@@ -30,7 +37,7 @@ void GameController::run() {
     }
 }
 
-void GameController::setupGame(bool player2IsComputer) {
+void GameController::setupGame(bool player2IsComputer, Difficulty difficulty) {
     board = Board();
 
     std::vector<Point> tankPositionsPlayer1 = {
@@ -45,7 +52,11 @@ void GameController::setupGame(bool player2IsComputer) {
     player1 = std::make_unique<HumanPlayer>(tankPositionsPlayer1, TANK1_FLAG, TANK_SYMBOL_PLAYER_1, board,
                                              input, PLAYER1_KEYS);
     if (player2IsComputer) {
-        player2 = std::make_unique<ComputerPlayer>(tankPositionsPlayer2, TANK1_FLAG, TANK_SYMBOL_PLAYER_2, board);
+        if (difficulty == Difficulty::HARD) {
+            player2 = std::make_unique<SearchAgentPlayer>(tankPositionsPlayer2, TANK1_FLAG, TANK_SYMBOL_PLAYER_2, board);
+        } else {
+            player2 = std::make_unique<ComputerPlayer>(tankPositionsPlayer2, TANK1_FLAG, TANK_SYMBOL_PLAYER_2, board);
+        }
     } else {
         player2 = std::make_unique<HumanPlayer>(tankPositionsPlayer2, TANK1_FLAG, TANK_SYMBOL_PLAYER_2, board,
                                                  input, PLAYER2_KEYS);

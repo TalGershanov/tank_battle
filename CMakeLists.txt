@@ -64,6 +64,8 @@ add_executable(tankBattle
         logic/human_player.cpp
         logic/computer_player.h
         logic/computer_player.cpp
+        logic/search_agent_player.h
+        logic/search_agent_player.cpp
 
         handlers/raylib_context.h
         handlers/raylib_context.cpp

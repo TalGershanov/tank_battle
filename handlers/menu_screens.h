@@ -3,6 +3,7 @@
 
 enum class MenuChoice { START_GAME, EXIT };
 enum class OpponentType { HUMAN, COMPUTER };
+enum class Difficulty { EASY, HARD };
 
 class MenuScreens {
 public:
@@ -12,4 +13,7 @@ public:
     static MenuChoice showMainMenu(RaylibContext& context);
 
     static OpponentType promptOpponentType(RaylibContext& context);
+
+    // Only shown when promptOpponentType() returned COMPUTER.
+    static Difficulty promptDifficulty(RaylibContext& context);
 };

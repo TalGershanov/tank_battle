@@ -10,13 +10,14 @@
 #include "logic/player.h"
 #include "handlers/raylib_context.h"
 #include "handlers/raylib_input_provider.h"
+#include "handlers/menu_screens.h"
 
 class GameController {
 public:
     void run();
 
 private:
-    void setupGame(bool player2IsComputer);
+    void setupGame(bool player2IsComputer, Difficulty difficulty);
     void runGameLoop();
     // Advances the simulation by exactly one game tick. Returns true if the
     // game ended (win/tie) this tick.

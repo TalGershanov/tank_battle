@@ -99,3 +99,17 @@ OpponentType MenuScreens::promptOpponentType(RaylibContext& context) {
     }
     return OpponentType::HUMAN;
 }
+
+Difficulty MenuScreens::promptDifficulty(RaylibContext& context) {
+    std::vector<std::string> lines = {
+        "Choose a difficulty:",
+        "(1) Easy",
+        "(2) Hard",
+    };
+    while (!context.shouldQuit()) {
+        int key = waitForKeyPress(context, lines);
+        if (key == DIFFICULTY_EASY_KEY) return Difficulty::EASY;
+        if (key == DIFFICULTY_HARD_KEY) return Difficulty::HARD;
+    }
+    return Difficulty::EASY;
+}

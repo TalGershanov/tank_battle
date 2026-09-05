@@ -60,6 +60,23 @@ constexpr int NUM_EVADE_OPTIONS = 2; // rotate-left vs rotate-right
 constexpr int SHELL_CHASE_LOOKAHEAD_STEPS = 10; // how far ahead to project a shell when checking if it threatens a tank
 
 // =====================================================================
+// Search Agent AI tuning (SearchAgentPlayer, minimax w/ alpha-beta)
+// =====================================================================
+constexpr int SEARCH_AGENT_SEARCH_ROUNDS = 2;          // minimax depth, in full MAX+MIN rounds
+constexpr int SEARCH_AGENT_REPLAN_TICKS = 2;            // full re-search cadence, in game ticks (~1s)
+constexpr int SEARCH_AGENT_SHELL_LOOKAHEAD_STEPS = 10;  // shell-threat projection horizon
+constexpr double SEARCH_AGENT_SWITCH_MARGIN = 150.0;    // min quickSelfEvaluate() gap before switching active tank
+
+constexpr double SEARCH_AGENT_WIN_SCORE = 100000.0;
+constexpr double SEARCH_AGENT_LINE_OF_FIRE_OFFENSE_WEIGHT = 400.0;
+constexpr double SEARCH_AGENT_LINE_OF_FIRE_DEFENSE_WEIGHT = 600.0;
+constexpr double SEARCH_AGENT_SHELL_THREAT_OFFENSE_WEIGHT = 250.0;
+constexpr double SEARCH_AGENT_SHELL_THREAT_DEFENSE_WEIGHT = 350.0;
+constexpr double SEARCH_AGENT_MINE_PROXIMITY_WEIGHT = 400.0;
+constexpr double SEARCH_AGENT_DISTANCE_WEIGHT = 2.0;
+constexpr double SEARCH_AGENT_WALL_COVER_WEIGHT = 20.0;
+
+// =====================================================================
 // Key bindings
 //
 // Values are chosen to match raylib's KEY_* codes directly (raylib
@@ -89,6 +106,8 @@ constexpr int MENU_SHOW_INSTRUCTIONS_KEY = '8';
 constexpr int MENU_EXIT_KEY = '9';
 constexpr int OPPONENT_HUMAN_KEY = '1';
 constexpr int OPPONENT_COMPUTER_KEY = '2';
+constexpr int DIFFICULTY_EASY_KEY = '1';
+constexpr int DIFFICULTY_HARD_KEY = '2';
 
 // =====================================================================
 // Mine positions
